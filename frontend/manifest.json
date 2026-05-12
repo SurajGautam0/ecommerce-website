@@ -1,0 +1,18 @@
+{
+  "name": "Suraj Commerce Hub",
+  "short_name": "Suraj Shop",
+  "description": "Fashion ecommerce store — Nepal & worldwide",
+  "start_url": "/frontend/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#e8354a",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "assets/images/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/images/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "categories": ["shopping", "lifestyle"],
+  "screenshots": [
+    { "src": "assets/images/womens-banner.jpg", "sizes": "1280x720", "type": "image/jpeg" }
+  ]
+}

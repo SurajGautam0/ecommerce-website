@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Suraj Commerce Hub — Fashion Store</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://js.stripe.com/v3/" defer></script>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#e8354a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));
+    }
+  </script>
+</head>
+
+<body>
+
+  <!-- TOAST -->
+  <div id="toast-container" class="toast-container"></div>
+  <!-- BACKDROP -->
+  <div id="backdrop" class="backdrop"></div>
+
+  <!-- CONFETTI -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- PRINT AREA -->
+  <div id="print-area" style="display:none"></div>
+
+  <!-- FLASH SALE BAR -->
+  <div class="flash-sale-bar" id="flash-sale-bar">
+    <div class="flash-shimmer"></div>
+    <div class="flash-left">
+      <span class="flash-fire">🔥</span>
+      <span class="flash-label">FLASH SALE</span>
+    </div>
+    <div class="flash-marquee-wrap">
+      <div class="flash-marquee">
+        <span id="flash-msg">⚡ Leather Biker Jacket — 23% OFF!</span>
+        <span class="flash-sep">★</span>
+        <span>💎 Premium Perfumes up to 30% OFF</span>
+        <span class="flash-sep">★</span>
+        <span>👟 Footwear Sale — Buy 2 Get 10% OFF</span>
+        <span class="flash-sep">★</span>
+        <span>💄 Beauty &amp; Cosmetics — Flat 20% OFF</span>
+        <span class="flash-sep">★</span>
+      </div>
+    </div>
+    <div class="flash-right">
+      <span class="flash-ends-label">ENDS IN</span>
+      <div class="flash-timer">
+        <div class="flash-time-box"><span id="fs-h">02</span><em>H</em></div>
+        <span class="flash-colon">:</span>
+        <div class="flash-time-box"><span id="fs-m">30</span><em>M</em></div>
+        <span class="flash-colon">:</span>
+        <div class="flash-time-box"><span id="fs-s">00</span><em>S</em></div>
+      </div>
+    </div>
+    <button class="flash-close-btn" onclick="this.parentElement.style.display='none'" aria-label="Close">✕</button>
+  </div>
+  <!-- STICKY ADD-TO-CART BAR -->
+  <div class="sticky-cart-bar" id="sticky-cart-bar">
+    <img id="sticky-cart-img" src="" alt="" />
+    <div class="sticky-cart-bar-info">
+      <strong id="sticky-cart-title"></strong>
+      <span id="sticky-cart-price"></span>
+    </div>
+    <button onclick="app.addToCart(app._currentId||'');app.hideStickyBar()">ADD TO CART</button>
+  </div>
+
+  <!-- AI CHATBOT -->
+  <button class="chatbot-trigger" id="chatbot-trigger" onclick="app.toggleChatbot()">
+    💬<div class="chat-badge">1</div>
+  </button>
+  <div class="chatbot-window" id="chatbot-window">
+    <div class="chatbot-head">
+      <div class="chatbot-avatar">🤖</div>
+      <div class="chatbot-head-info">
+        <strong>Suraj Assistant</strong>
+        <span>Always here to help</span>
+      </div>
+      <div class="chatbot-online"></div>
+    </div>
+    <div class="chatbot-msgs" id="chatbot-msgs"></div>
+    <div class="chatbot-chips" id="chatbot-chips">
+      <button class="chat-chip" onclick="app.chatSend('Show me dresses')">👗 Dresses</button>
+      <button class="chat-chip" onclick="app.chatSend('Best deals today')">🔥 Best Deals</button>
+      <button class="chat-chip" onclick="app.chatSend('Track my order')">📦 Track Order</button>
+      <button class="chat-chip" onclick="app.chatSend('Coupon codes')">🎟️ Coupons</button>
+    </div>
+    <div class="chatbot-input-row">
+      <input class="chatbot-input" id="chatbot-input" placeholder="Ask me anything..."
+        onkeydown="if(event.key==='Enter')app.chatSend(this.value)" />
+      <button class="chatbot-send" onclick="app.chatSend(document.getElementById('chatbot-input').value)"><i
+          class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+
+  <!-- DARK MODE TOGGLE -->
+  <button class="dark-toggle" id="dark-toggle" title="Toggle dark mode">🌙</button>
+
+  <!-- SCROLL TO TOP -->
+  <button class="scroll-top-btn" id="scroll-top-btn" title="Back to top"><i class="fas fa-chevron-up"></i></button>
+
+  <!-- SPIN WHEEL TRIGGER -->
+  <button class="spin-trigger-btn" id="spin-trigger-btn" onclick="app.openSpinWheel()">🎰 SPIN &amp; WIN</button>
+
+  <!-- COMPARE BAR -->
+  <div class="compare-bar" id="compare-bar">
+    <i class="fas fa-balance-scale" style="color:var(--pink);font-size:18px;flex-shrink:0"></i>
+    <div class="compare-bar-items" id="compare-bar-items"></div>
+    <button class="compare-btn" onclick="app.openCompareModal()">Compare Now</button>
+    <button class="compare-clear" onclick="app.clearCompare()">Clear</button>
+  </div>
+
+  <!-- SPIN WHEEL MODAL -->
+  <div class="modal" id="spin-modal">
+    <div class="modal-box spin-modal-box">
+      <button class="modal-close" onclick="app.closeModal('spin-modal')"><i class="fas fa-times"></i></button>
+      <h3 style="font-size:18px;font-weight:800;margin-bottom:4px">🎰 Spin &amp; Win!</h3>
+      <p style="font-size:12px;color:var(--text-3);margin-bottom:18px">Try your luck for an exclusive coupon code</p>
+      <div class="spin-wheel-wrap">
+        <div class="spin-pointer">▼</div>
+        <canvas id="spin-canvas" width="260" height="260"></canvas>
+      </div>
+      <button class="spin-btn" id="spin-btn" onclick="app.spinWheel()">SPIN THE WHEEL</button>
+      <div class="spin-result" id="spin-result" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- COMPARE MODAL -->
+  <div class="modal" id="compare-modal">
+    <div class="modal-box compare-modal-box">
+      <button class="modal-close" onclick="app.closeModal('compare-modal')"><i class="fas fa-times"></i></button>
+      <h3 style="font-size:16px;font-weight:800;margin-bottom:16px">Product Comparison</h3>
+      <div id="compare-table-wrap"></div>
+    </div>
+  </div>
+
+  <!-- SIZE GUIDE MODAL -->
+  <div class="modal" id="size-guide-modal">
+    <div class="modal-box size-guide-box">
+      <button class="modal-close" onclick="app.closeModal('size-guide-modal')"><i class="fas fa-times"></i></button>
+      <h3 style="font-size:16px;font-weight:800;margin-bottom:12px">📏 Size Guide</h3>
+      <div class="size-guide-tabs">
+        <button class="sg-tab active" onclick="app.showSizeGuide('clothing',this)">Clothing</button>
+        <button class="sg-tab" onclick="app.showSizeGuide('shoes',this)">Shoes</button>
+        <button class="sg-tab" onclick="app.showSizeGuide('jewelry',this)">Jewelry</button>
+      </div>
+      <div id="size-guide-content"></div>
+    </div>
+  </div>
+
+  <!-- SHORTCUTS HINT -->
+  <div class="shortcuts-toast" id="shortcuts-toast">
+    <div class="shortcut-row"><kbd class="kbd-hint">S</kbd> Focus search</div>
+    <div class="shortcut-row"><kbd class="kbd-hint">C</kbd> Open cart</div>
+    <div class="shortcut-row"><kbd class="kbd-hint">W</kbd> Wishlist</div>
+    <div class="shortcut-row"><kbd class="kbd-hint">D</kbd> Dark mode</div>
+    <div class="shortcut-row"><kbd class="kbd-hint">ESC</kbd> Close modal</div>
+    <div class="shortcut-row"><kbd class="kbd-hint">←/→</kbd> Hero slides</div>
+    <div class="shortcut-row"><kbd class="kbd-hint">?</kbd> Show shortcuts</div>
+    <div class="shortcut-row"><kbd class="kbd-hint">T</kbd> Back to top</div>
+  </div>
+
+  <!-- INFINITE SCROLL LOADER -->
+  <div class="infinite-loader" id="infinite-loader">
+    <div class="infinite-loader-dot"></div>
+    <div class="infinite-loader-dot"></div>
+    <div class="infinite-loader-dot"></div>
+  </div>
+
+  <!-- ===================== LIVE NOTIFICATION ===================== -->
+  <div class="live-notif" id="live-notif">
+    <img src="assets/images/products/perfume.jpg" alt="" />
+    <div class="live-notif-body">
+      <strong>Someone in New York just bought</strong>
+      <span id="live-notif-product">Rose Gold Earrings</span>
+      <em id="live-notif-time">10 Minutes ago</em>
+    </div>
+    <button class="live-notif-close" onclick="document.getElementById('live-notif').style.display='none'">×</button>
+  </div>
+
+  <!-- ===================== HEADER ===================== -->
+  <header class="header" id="header">
+
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="container topbar-inner">
+        <div class="topbar-social">
+          <a href="#"><i class="fab fa-facebook-f"></i></a>
+          <a href="#"><i class="fab fa-twitter"></i></a>
+          <a href="#"><i class="fab fa-instagram"></i></a>
+          <a href="#"><i class="fab fa-linkedin-in"></i></a>
+        </div>
+        <div class="topbar-promo">FREE SHIPPING THIS WEEK ORDER OVER - $55</div>
+        <div class="topbar-right">
+          <select class="top-select" id="currency-select">
+            <option value="USD">USD $</option>
+            <option value="NPR">NPR रू</option>
+            <option value="CAD">CAD $</option>
+            <option value="EUR">EUR €</option>
+          </select>
+          <select class="top-select" id="lang-select">
+            <option>ENGLISH</option>
+            <option>नेपाली</option>
+            <option>FRENCH</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main header -->
+    <div class="header-main">
+      <div class="container header-main-inner">
+        <a class="logo" href="/">Suraj</a>
+        <form class="search-form" id="search-form">
+          <div class="search-wrap">
+            <input type="search" id="search-input" placeholder='Enter your product name... (press "S")'
+              class="search-input" autocomplete="off" />
+            <button type="button" class="voice-search-btn" id="voice-search-btn" title="Voice search"><i
+                class="fas fa-microphone"></i></button>
+            <div class="search-suggestions hidden" id="search-suggestions"></div>
+          </div>
+          <button type="submit" class="search-btn"><i class="fas fa-search"></i></button>
+        </form>
+        <div class="header-icons">
+          <button class="hicon-btn" id="btn-login-nav" title="Account"><i class="fas fa-user"></i><span
+              id="nav-user-label"></span></button>
+          <button class="hicon-btn" id="btn-wishlist" title="Wishlist">
+            <i class="fas fa-heart"></i><span class="hbadge" id="wishlist-count">0</span>
+          </button>
+          <div class="hicon-btn-wrap">
+            <button class="hicon-btn" id="btn-cart" title="Cart (press C)">
+              <i class="fas fa-shopping-bag"></i><span class="hbadge" id="cart-count">0</span>
+            </button>
+            <div class="mini-cart-preview" id="mini-cart-preview">
+              <div id="mini-cart-preview-items"></div>
+              <div class="mini-cart-preview-footer">
+                <button class="mini-cart-view-btn" onclick="app.openCart()">View Cart</button>
+                <button class="mini-cart-checkout-btn" onclick="app.openCheckout()">Checkout</button>
+              </div>
+            </div>
+          </div>
+          <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nav menu -->
+    <nav class="main-nav">
+      <div class="container">
+        <ul class="nav-list" id="nav-list">
+          <li><a href="#" class="nav-link active" onclick="app.filterByCategory('');return false">HOME</a></li>
+          <li class="has-dropdown">
+            <a href="#" class="nav-link">CATEGORIES <i class="fas fa-chevron-down"></i></a>
+            <ul class="dropdown">
+              <li><a href="#" onclick="app.filterByCategory('Dress & Frock');return false">Dress &amp; Frock</a></li>
+              <li><a href="#" onclick="app.filterByCategory('Winter Wear');return false">Winter Wear</a></li>
+              <li><a href="#" onclick="app.filterByCategory('Jackets');return false">Jackets</a></li>
+              <li><a href="#" onclick="app.filterByCategory('T-Shirts');return false">T-Shirts</a></li>
+              <li><a href="#" onclick="app.filterByCategory('Shorts & Jeans');return false">Shorts &amp; Jeans</a></li>
+              <li><a href="#" onclick="app.filterByCategory('Hats & Caps');return false">Hats &amp; Caps</a></li>
+              <li><a href="#" onclick="app.filterByCategory('Sports');return false">Sports</a></li>
+              <li><a href="#" onclick="app.filterByCategory('Shoes & Footwear');return false">Shoes &amp; Footwear</a>
+              </li>
+              <li><a href="#" onclick="app.filterByCategory('Watches & Jewelry');return false">Watches &amp; Jewelry</a>
+              </li>
+              <li><a href="#" onclick="app.filterByCategory('Cosmetics & Beauty');return false">Cosmetics &amp;
+                  Beauty</a></li>
+              <li><a href="#" onclick="app.filterByCategory('Glasses & Lens');return false">Glasses &amp; Lens</a></li>
+              <li><a href="#" onclick="app.filterByCategory('Bags & Accessories');return false">Bags &amp;
+                  Accessories</a></li>
+              <li><a href="#" onclick="app.filterByCategory('Perfume & Fragrance');return false">Perfume &amp;
+                  Fragrance</a></li>
+            </ul>
+          </li>
+          <li><a href="#" class="nav-link" onclick="app.filterByCategory('T-Shirts');return false">MEN'S</a></li>
+          <li><a href="#" class="nav-link" onclick="app.filterByCategory('Dress & Frock');return false">WOMEN'S</a></li>
+          <li><a href="#" class="nav-link" onclick="app.filterByCategory('Watches & Jewelry');return false">JEWELRY</a>
+          </li>
+          <li><a href="#" class="nav-link" onclick="app.filterByCategory('Cosmetics & Beauty');return false">BEAUTY</a>
+          </li>
+          <li><a href="#" class="nav-link" onclick="app.filterByCategory('Bags & Accessories');return false">BAGS</a>
+          </li>
+          <li><a href="#" class="nav-link"
+              onclick="app.filterByCategory('Perfume & Fragrance');return false">PERFUME</a></li>
+          <li><a href="#" class="nav-link">BLOG</a></li>
+          <li><a href="#" class="nav-link hot-link" onclick="app.filterByCategory('');return false">HOT OFFERS 🔥</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <!-- CATEGORY PILLS (mobile only) -->
+  <div class="cat-pills-bar" id="cat-pills-bar">
+    <button class="cat-pill active" onclick="app.filterByCategory('')">All</button>
+    <button class="cat-pill" onclick="app.filterByCategory('Dress & Frock')">Dress</button>
+    <button class="cat-pill" onclick="app.filterByCategory('T-Shirts')">Tops</button>
+    <button class="cat-pill" onclick="app.filterByCategory('Jackets')">Jackets</button>
+    <button class="cat-pill" onclick="app.filterByCategory('Shorts & Jeans')">Jeans</button>
+    <button class="cat-pill" onclick="app.filterByCategory('Winter Wear')">Winter</button>
+    <button class="cat-pill" onclick="app.filterByCategory('Sports')">Sports</button>
+    <button class="cat-pill" onclick="app.filterByCategory('Shoes & Footwear')">Shoes</button>
+    <button class="cat-pill" onclick="app.filterByCategory('Watches & Jewelry')">Jewelry</button>
+    <button class="cat-pill" onclick="app.filterByCategory('Cosmetics & Beauty')">Beauty</button>
+    <button class="cat-pill" onclick="app.filterByCategory('Glasses & Lens')">Glasses</button>
+    <button class="cat-pill" onclick="app.filterByCategory('Bags & Accessories')">Bags</button>
+    <button class="cat-pill" onclick="app.filterByCategory('Perfume & Fragrance')">Perfume</button>
+  </div>
+
+  <!-- ===================== MOBILE SIDEBAR ===================== -->
+  <aside class="mobile-sidebar" id="mobile-sidebar">
+    <div class="mob-sidebar-head">
+      <span class="logo">Suraj</span>
+      <button class="mob-close" id="close-sidebar"><i class="fas fa-times"></i></button>
+    </div>
+    <nav class="mob-nav">
+      <a href="#" class="mob-link"
+        onclick="app.filterByCategory('');document.getElementById('mobile-sidebar').classList.remove('open');return false"><i
+          class="fas fa-home"></i> Home</a>
+      <a href="#" class="mob-link"
+        onclick="app.filterByCategory('Dress & Frock');document.getElementById('mobile-sidebar').classList.remove('open');return false"><i
+          class="fas fa-tshirt"></i> Dress &amp; Frock</a>
+      <a href="#" class="mob-link"
+        onclick="app.filterByCategory('Winter Wear');document.getElementById('mobile-sidebar').classList.remove('open');return false"><i
+          class="fas fa-snowflake"></i> Winter Wear</a>
+      <a href="#" class="mob-link"
+        onclick="app.filterByCategory('Jackets');document.getElementById('mobile-sidebar').classList.remove('open');return false"><i
+          class="fas fa-wind"></i> Jackets</a>
+      <a href="#" class="mob-link"
+        onclick="app.filterByCategory('Watches & Jewelry');document.getElementById('mobile-sidebar').classList.remove('open');return false"><i
+          class="fas fa-gem"></i> Jewelry</a>
+      <a href="#" class="mob-link"
+        onclick="app.filterByCategory('Shoes & Footwear');document.getElementById('mobile-sidebar').classList.remove('open');return false"><i
+          class="fas fa-shoe-prints"></i> Shoes</a>
+      <a href="#" class="mob-link"
+        onclick="app.filterByCategory('Sports');document.getElementById('mobile-sidebar').classList.remove('open');return false"><i
+          class="fas fa-running"></i> Sports</a>
+      <a href="#" class="mob-link"
+        onclick="app.filterByCategory('Cosmetics & Beauty');document.getElementById('mobile-sidebar').classList.remove('open');return false"><i
+          class="fas fa-magic"></i> Cosmetics &amp; Beauty</a>
+      <a href="#" class="mob-link"
+        onclick="app.filterByCategory('Glasses & Lens');document.getElementById('mobile-sidebar').classList.remove('open');return false"><i
+          class="fas fa-glasses"></i> Glasses &amp; Lens</a>
+      <a href="#" class="mob-link"
+        onclick="app.filterByCategory('Bags & Accessories');document.getElementById('mobile-sidebar').classList.remove('open');return false"><i
+          class="fas fa-shopping-bag"></i> Bags &amp; Accessories</a>
+      <a href="#" class="mob-link"
+        onclick="app.filterByCategory('Perfume & Fragrance');document.getElementById('mobile-sidebar').classList.remove('open');return false"><i
+          class="fas fa-spray-can"></i> Perfume &amp; Fragrance</a>
+      <div style="height:1px;background:#eee;margin:8px 0"></div>
+      <button class="mob-link" id="sidebar-login-btn"><i class="fas fa-user"></i> Login / Register</button>
+      <button class="mob-link" id="sidebar-orders-btn"><i class="fas fa-box"></i> My Orders</button>
+      <button class="mob-link" id="sidebar-wishlist-btn"><i class="fas fa-heart"></i> Wishlist</button>
+    </nav>
+  </aside>
+
+  <!-- ===================== HERO BANNER ===================== -->
+  <section class="hero">
+    <div class="hero-slider" id="hero-slider">
+
+      <div class="hero-slide active">
+        <div class="hero-bg" style="background: linear-gradient(135deg,#fdf0e8 60%,#f5dfc8 100%)">
+          <div class="hero-deco"><img src="assets/images/womens-banner.jpg" alt="" /></div>
+        </div>
+        <div class="container hero-content">
+          <div class="hero-text">
+            <p class="hero-label">Trending Item</p>
+            <h1 class="hero-title">WOMEN'S<br>LATEST<br>FASHION SALE</h1>
+            <p class="hero-starting">starting at $<span class="hero-price-big">20</span><span
+                class="hero-price-small">.00</span></p>
+            <a href="#" class="btn-shop-now" onclick="app.filterByCategory('Dress & Frock');return false">SHOP NOW</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-slide">
+        <div class="hero-bg" style="background: linear-gradient(135deg,#fce8ee 60%,#f5c6d0 100%)">
+          <div class="hero-deco"><img src="assets/images/mens-banner.jpg" alt="" /></div>
+        </div>
+        <div class="container hero-content">
+          <div class="hero-text">
+            <p class="hero-label">New Collection</p>
+            <h1 class="hero-title">MEN'S<br>FASHION<br>COLLECTION</h1>
+            <p class="hero-starting">starting at $<span class="hero-price-big">25</span><span
+                class="hero-price-small">.00</span></p>
+            <a href="#" class="btn-shop-now" onclick="app.filterByCategory('T-Shirts');return false">SHOP NOW</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-slide">
+        <div class="hero-bg" style="background: linear-gradient(135deg,#e8f0fe 60%,#c8d8fa 100%)">
+          <div class="hero-deco"><img src="assets/images/banner-2.jpg" alt="" /></div>
+        </div>
+        <div class="container hero-content">
+          <div class="hero-text">
+            <p class="hero-label">New Arrivals</p>
+            <h1 class="hero-title">LEATHER<br>JACKET<br>COLLECTION</h1>
+            <p class="hero-starting">starting at $<span class="hero-price-big">49</span><span
+                class="hero-price-small">.99</span></p>
+            <a href="#" class="btn-shop-now" onclick="app.filterByCategory('Jackets');return false">SHOP NOW</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <!-- Slider dots -->
+    <div class="hero-dots-wrap">
+      <button class="hdot active" data-slide="0"></button>
+      <button class="hdot" data-slide="1"></button>
+      <button class="hdot" data-slide="2"></button>
+    </div>
+    <button class="hero-arrow hero-prev"><i class="fas fa-angle-left"></i></button>
+    <button class="hero-arrow hero-next"><i class="fas fa-angle-right"></i></button>
+  </section>
+
+  <!-- ===================== CATEGORY SHOWCASE ===================== -->
+  <section class="cat-showcase">
+    <div class="container cat-showcase-grid">
+      <div class="cat-card" onclick="app.filterByCategory('Dress & Frock')">
+        <div class="cat-card-img"><img src="assets/images/products/clothes-1.jpg" alt="" /></div>
+        <div class="cat-card-info">
+          <strong>DRESS &amp; FROCK</strong>
+          <span class="cat-count" id="cat-count-dress">Show All</span>
+        </div>
+      </div>
+      <div class="cat-card" onclick="app.filterByCategory('Winter Wear')">
+        <div class="cat-card-img"><img src="assets/images/products/jacket-1.jpg" alt="" /></div>
+        <div class="cat-card-info">
+          <strong>WINTER WEAR</strong>
+          <span class="cat-count">Show All</span>
+        </div>
+      </div>
+      <div class="cat-card" onclick="app.filterByCategory('Glasses & Lens')">
+        <div class="cat-card-img"><img src="assets/images/products/1.jpg" alt="" /></div>
+        <div class="cat-card-info">
+          <strong>GLASSES &amp; LENS</strong>
+          <span class="cat-count">Show All</span>
+        </div>
+      </div>
+      <div class="cat-card" onclick="app.filterByCategory('Shorts & Jeans')">
+        <div class="cat-card-img"><img src="assets/images/products/shorts-1.jpg" alt="" /></div>
+        <div class="cat-card-info">
+          <strong>SHORTS &amp; JEANS</strong>
+          <span class="cat-count">Show All</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== MAIN CONTENT ===================== -->
+  <main class="main-content">
+    <div class="container main-grid">
+
+      <!-- LEFT SIDEBAR -->
+      <aside class="left-sidebar">
+        <div class="sidebar-block">
+          <h4 class="sidebar-title">CATEGORY</h4>
+          <ul class="sidebar-cat-list" id="sidebar-cat-list">
+            <li><button class="scat-btn" onclick="app.filterByCategory('Dress & Frock')"><span class="scat-dot"
+                  style="background:#e91e63"></span> Clothes <span class="scat-plus">+</span></button></li>
+            <li><button class="scat-btn" onclick="app.filterByCategory('Shoes & Footwear')"><span class="scat-dot"
+                  style="background:#ff9800"></span> Footwear <span class="scat-plus">+</span></button></li>
+            <li><button class="scat-btn" onclick="app.filterByCategory('Watches & Jewelry')"><span class="scat-dot"
+                  style="background:#9c27b0"></span> Jewelry <span class="scat-plus">+</span></button></li>
+            <li><button class="scat-btn" onclick="app.filterByCategory('Perfume & Fragrance')"><span class="scat-dot"
+                  style="background:#2196f3"></span> Perfume <span class="scat-plus">+</span></button></li>
+            <li><button class="scat-btn" onclick="app.filterByCategory('Cosmetics')"><span class="scat-dot"
+                  style="background:#f44336"></span> Cosmetics <span class="scat-plus">+</span></button></li>
+            <li><button class="scat-btn" onclick="app.filterByCategory('Glasses & Lens')"><span class="scat-dot"
+                  style="background:#4caf50"></span> Glasses <span class="scat-plus">+</span></button></li>
+            <li><button class="scat-btn" onclick="app.filterByCategory('Bags & Accessories')"><span class="scat-dot"
+                  style="background:#795548"></span> Bags <span class="scat-plus">+</span></button></li>
+          </ul>
+        </div>
+
+        <div class="sidebar-block">
+          <h4 class="sidebar-title">BEST SELLERS</h4>
+          <div id="best-sellers-list">
+            <!-- loaded by JS -->
+          </div>
+        </div>
+      </aside>
+
+      <!-- CENTER CONTENT -->
+      <div class="center-content">
+
+        <!-- New Arrivals / Trending / Top Rated tabs -->
+        <div class="product-tabs-section">
+          <div class="product-tabs-header">
+            <div class="tabs-row">
+              <div class="tab-col">
+                <h3 class="tab-title">New Arrivals</h3>
+                <div class="tab-products" id="new-arrivals-list"></div>
+              </div>
+              <div class="tab-col">
+                <h3 class="tab-title">Trending</h3>
+                <div class="tab-products" id="trending-list"></div>
+              </div>
+              <div class="tab-col">
+                <h3 class="tab-title">Top Rated</h3>
+                <div class="tab-products" id="top-rated-list"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Deal of the Day -->
+        <div class="deal-section">
+          <div class="deal-section-header">
+            <h3 class="section-heading">Deal Of The Day</h3>
+            <div class="deal-nav-btns">
+              <button class="deal-nav-btn" id="deal-prev" aria-label="Previous deal"><i
+                  class="fas fa-chevron-left"></i></button>
+              <span class="deal-counter" id="deal-counter">1 / 6</span>
+              <button class="deal-nav-btn" id="deal-next" aria-label="Next deal"><i
+                  class="fas fa-chevron-right"></i></button>
+            </div>
+          </div>
+
+          <!-- Main featured deal -->
+          <div class="deal-card" id="deal-card">
+            <div class="deal-img-wrap">
+              <span class="deal-badge" id="deal-badge">-25%</span>
+              <img src="" alt="Deal" id="deal-img" loading="lazy" />
+              <button class="deal-wishlist-btn" id="deal-wishlist-btn" aria-label="Wishlist"><i
+                  class="far fa-heart"></i></button>
+            </div>
+            <div class="deal-info">
+              <span class="deal-category-tag" id="deal-cat-tag">Category</span>
+              <div class="deal-stars" id="deal-stars">★★★★★</div>
+              <h4 class="deal-title" id="deal-title">Loading deal...</h4>
+              <p class="deal-desc" id="deal-desc"></p>
+              <div class="deal-price-row">
+                <span class="deal-price" id="deal-price">$0.00</span>
+                <span class="deal-original" id="deal-original"></span>
+                <span class="deal-save-tag" id="deal-save-tag"></span>
+              </div>
+              <div class="deal-actions">
+                <button class="btn-add-to-cart deal-cart-btn" id="deal-add-cart"><i class="fas fa-cart-plus"></i> ADD TO
+                  CART</button>
+                <button class="deal-view-btn" id="deal-view-btn"><i class="fas fa-eye"></i> QUICK VIEW</button>
+              </div>
+              <div class="deal-stock-row">
+                <span>SOLD: <strong id="deal-sold">0</strong></span>
+                <span>LEFT: <strong id="deal-available">0</strong></span>
+              </div>
+              <div class="deal-progress">
+                <div class="deal-progress-bar" id="deal-bar" style="width:0%"></div>
+              </div>
+              <p class="deal-hurry"><i class="fas fa-fire"></i> HURRY UP! OFFER ENDS IN:</p>
+              <div class="deal-countdown" id="deal-countdown">
+                <div class="cdown-box"><span id="cd-days">00</span><em>Days</em></div>
+                <div class="cdown-box"><span id="cd-hours">00</span><em>Hours</em></div>
+                <div class="cdown-box"><span id="cd-mins">00</span><em>Min</em></div>
+                <div class="cdown-box"><span id="cd-secs">00</span><em>Sec</em></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mini deals strip -->
+          <div class="deal-strip" id="deal-strip"></div>
+        </div>
+
+        <!-- New Products Grid -->
+        <div class="new-products-section" id="shop-main">
+          <h3 class="section-heading">New Products</h3>
+          <div class="skeleton-wrap" id="loading-skeleton">
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+          </div>
+          <div class="products-grid" id="product-grid" style="display:none"></div>
+          <div class="empty-state hidden" id="empty-state">
+            <i class="fas fa-search"></i>
+            <h3>No products found</h3>
+            <button class="btn-shop-now" id="btn-clear-filters-2">Clear Filters</button>
+          </div>
+          <!-- Toolbar (sort/filter) for products section -->
+          <div class="products-toolbar">
+            <span id="results-count" class="results-info"></span>
+            <div class="toolbar-right">
+              <select id="sort-select" class="sort-sel">
+                <option value="featured">Featured</option>
+                <option value="newest">Newest</option>
+                <option value="price_asc">Price: Low → High</option>
+                <option value="price_desc">Price: High → Low</option>
+                <option value="rating">Top Rated</option>
+              </select>
+              <button class="filter-toggle-btn" id="filter-toggle"><i class="fas fa-sliders-h"></i> Filter</button>
+            </div>
+          </div>
+          <!-- Filter panel (mobile) -->
+          <div class="filter-panel hidden" id="filter-panel">
+            <div class="filter-panel-inner">
+              <h4>Filter Products</h4>
+              <div class="fp-group">
+                <label>Category</label>
+                <select id="fp-category" class="sort-sel" style="width:100%">
+                  <option value="">All Categories</option>
+                  <option>Dress &amp; Frock</option>
+                  <option>Winter Wear</option>
+                  <option>Glasses &amp; Lens</option>
+                  <option>Shorts &amp; Jeans</option>
+                  <option>T-Shirts</option>
+                  <option>Jackets</option>
+                  <option>Watches &amp; Jewelry</option>
+                  <option>Hats &amp; Caps</option>
+                  <option>Bags &amp; Accessories</option>
+                  <option>Shoes &amp; Footwear</option>
+                  <option>Cosmetics</option>
+                  <option>Perfume &amp; Fragrance</option>
+                  <option>Sports</option>
+                </select>
+              </div>
+              <div class="fp-group">
+                <label>Min Price</label>
+                <input type="number" id="fp-min" class="fp-input" placeholder="$0" />
+              </div>
+              <div class="fp-group">
+                <label>Max Price</label>
+                <input type="number" id="fp-max" class="fp-input" placeholder="$999" />
+              </div>
+              <button class="btn-add-to-cart" id="btn-apply-filter" style="width:100%;margin-top:10px">Apply</button>
+            </div>
+          </div>
+          <div class="pagination" id="pagination"></div>
+        </div>
+
+      </div><!-- end center-content -->
+
+      <!-- RIGHT SIDEBAR (products by category) -->
+      <aside class="right-sidebar" id="right-sidebar">
+        <div class="sidebar-block">
+          <h4 class="sidebar-title">POPULAR CATEGORIES</h4>
+          <ul class="pop-cat-list">
+            <li><a href="#" onclick="app.filterByCategory('Dress & Frock');return false">Fashion</a></li>
+            <li><a href="#" onclick="app.filterByCategory('Watches & Jewelry');return false">Electronic</a></li>
+            <li><a href="#" onclick="app.filterByCategory('Cosmetics');return false">Cosmetic</a></li>
+            <li><a href="#" onclick="app.filterByCategory('Sports');return false">Health</a></li>
+            <li><a href="#" onclick="app.filterByCategory('Watches & Jewelry');return false">Watches</a></li>
+          </ul>
+        </div>
+        <div class="sidebar-block">
+          <h4 class="sidebar-title">PRODUCTS</h4>
+          <div id="right-products-list"></div>
+        </div>
+      </aside>
+
+    </div><!-- end main-grid -->
+  </main>
+
+  <!-- ===================== SUMMER PROMO ===================== -->
+  <section class="promo-section">
+    <div class="container">
+      <div class="promo-card">
+        <div class="promo-text">
+          <span class="promo-badge">25% DISCOUNT</span>
+          <h2>Summer Collection</h2>
+          <p>Starting @ $10</p>
+          <a href="#" class="btn-shop-now" onclick="app.filterByCategory('');return false">SHOP NOW</a>
+        </div>
+        <div class="promo-img">
+          <img src="assets/images/cta-banner.jpg" alt="" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== OUR SERVICES ===================== -->
+  <section class="services-section">
+    <div class="container">
+      <h3 class="section-heading">Our Services</h3>
+      <div class="services-grid">
+        <div class="service-item">
+          <div class="service-icon"><i class="fas fa-truck"></i></div>
+          <div><strong>Worldwide Delivery</strong><span>For Order Over $100</span></div>
+        </div>
+        <div class="service-item">
+          <div class="service-icon"><i class="fas fa-bolt"></i></div>
+          <div><strong>Next Day Delivery</strong><span>UK Orders Only</span></div>
+        </div>
+        <div class="service-item">
+          <div class="service-icon"><i class="fas fa-headset"></i></div>
+          <div><strong>Best Online Support</strong><span>Hours: 8AM - 11PM</span></div>
+        </div>
+        <div class="service-item">
+          <div class="service-icon"><i class="fas fa-undo"></i></div>
+          <div><strong>Return Policy</strong><span>Easy &amp; Free Return</span></div>
+        </div>
+        <div class="service-item">
+          <div class="service-icon"><i class="fas fa-percent"></i></div>
+          <div><strong>30% Money Back</strong><span>For Order Over $100</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== BLOG ===================== -->
+  <section class="blog-section">
+    <div class="container">
+      <h3 class="section-heading">From The Blog</h3>
+      <div class="blog-grid">
+        <div class="blog-card">
+          <div class="blog-img"><img src="assets/images/blog-1.jpg" alt="" /></div>
+          <div class="blog-body">
+            <span class="blog-cat">Fashion</span>
+            <h4>Fashion Trends: How to Win the Pickup Battle</h4>
+            <p class="blog-meta">By Mr Selsa | Feb 10, 2022</p>
+          </div>
+        </div>
+        <div class="blog-card">
+          <div class="blog-img"><img src="assets/images/blog-2.jpg" alt="" /></div>
+          <div class="blog-body">
+            <span class="blog-cat">Shoes</span>
+            <h4>EBT vendors: Claim Your Share of SNAP Online Revenue</h4>
+            <p class="blog-meta">By Mr Powar | Mar 15, 2022</p>
+          </div>
+        </div>
+        <div class="blog-card">
+          <div class="blog-img"><img src="assets/images/blog-3.jpg" alt="" /></div>
+          <div class="blog-body">
+            <span class="blog-cat">Electronic</span>
+            <h4>Curbside Fashion Trends: How to Win the Pickup Battle</h4>
+            <p class="blog-meta">By Mr Powar | Mar 15, 2022</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TESTIMONIALS ===================== -->
+  <section class="testimonials-section">
+    <div class="container">
+      <h3 class="section-heading" style="text-align:center">Testimonial</h3>
+      <div class="testimonials-grid">
+        <div class="testimonial-card">
+          <img src="assets/images/testimonial-1.jpg" class="testi-avatar" alt="" />
+          <h5>ALAN DOE</h5>
+          <p class="testi-role">- CEO &amp; Founder Invision</p>
+          <span class="testi-quote">❝</span>
+          <p class="testi-body">Lorem ipsum dolor sit amet consectetur Lorem ipsum dolor dolor sit amet.</p>
+        </div>
+        <div class="testimonial-card">
+          <img src="assets/images/testimonial-1.jpg" class="testi-avatar" alt="" />
+          <h5>SARAH JONES</h5>
+          <p class="testi-role">- Fashion Blogger</p>
+          <span class="testi-quote">❝</span>
+          <p class="testi-body">Amazing collection! The quality exceeded my expectations. Will shop again!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== RECENTLY VIEWED ===================== -->
+  <section class="recently-viewed-section hidden" id="recently-viewed-section">
+    <div class="container">
+      <h3 class="section-heading">Recently Viewed</h3>
+      <div class="recently-viewed-scroll" id="recently-viewed-scroll"></div>
+    </div>
+  </section>
+
+  <!-- ===================== YOU MAY LIKE ===================== -->
+  <section class="you-may-like hidden" id="you-may-like-section">
+    <div class="container">
+      <h3 class="section-heading">✨ You May Also Like</h3>
+      <div class="you-may-like-scroll" id="you-may-like-scroll"></div>
+    </div>
+  </section>
+
+  <!-- ===================== FOR YOU ===================== -->
+  <section class="for-you-section hidden" id="for-you-section">
+    <div class="container">
+      <div class="for-you-badge"><i class="fas fa-magic"></i> PERSONALIZED FOR YOU</div>
+      <h3 class="section-heading" style="margin-top:4px">Based on Your Browsing</h3>
+      <div class="for-you-scroll" id="for-you-scroll"></div>
+    </div>
+  </section>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="footer">
+    <div class="container footer-grid">
+      <div class="footer-col">
+        <h4>OUR COMPANY</h4>
+        <ul>
+          <li><a href="#">Delivery</a></li>
+          <li><a href="#">Legal Notice</a></li>
+          <li><a href="#">Terms And Conditions</a></li>
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Secure Payment</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>SERVICES</h4>
+        <ul>
+          <li><a href="#">Prices Drop</a></li>
+          <li><a href="#">New Products</a></li>
+          <li><a href="#">Best Sales</a></li>
+          <li><a href="#">Contact Us</a></li>
+          <li><a href="#">Sitemap</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>CONTACT</h4>
+        <ul>
+          <li><i class="fas fa-map-marker-alt"></i> 415 State 414 the Beaver Dams, New York (NY), 14812, USA</li>
+          <li><i class="fas fa-phone"></i> (607) 936-0056</li>
+          <li><i class="fas fa-envelope"></i> Example@Gmail.Com</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="container footer-bottom-inner">
+        <p>© <span id="year"></span> Suraj Commerce Hub. All Rights Reserved. Powered By Suraj</p>
+        <div class="payment-icons">
+          <i class="fab fa-cc-mastercard"></i>
+          <i class="fab fa-cc-paypal"></i>
+          <i class="fab fa-cc-visa"></i>
+          <i class="fab fa-cc-amex"></i>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===================== MOBILE BOTTOM NAV ===================== -->
+  <nav class="mobile-bottom-nav">
+    <button class="mbn-btn" id="mbn-menu"><i class="fas fa-bars"></i></button>
+    <button class="mbn-btn" id="mbn-cart"><i class="fas fa-shopping-bag"></i><span class="mbn-badge"
+        id="mbn-cart-count">0</span></button>
+    <button class="mbn-btn mbn-home" onclick="app.filterByCategory('')"><i class="fas fa-home"></i></button>
+    <button class="mbn-btn" id="mbn-wishlist"><i class="fas fa-heart"></i><span class="mbn-badge"
+        id="mbn-wish-count">0</span></button>
+    <button class="mbn-btn" id="mbn-grid"><i class="fas fa-th-large"></i></button>
+  </nav>
+
+  <!-- ===================== CART DRAWER ===================== -->
+  <aside class="drawer" id="cart-drawer">
+    <div class="drawer-head">
+      <h3>Shopping Cart <span class="dbadge" id="cart-drawer-count">0</span></h3>
+      <button class="drawer-close" id="close-cart"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="drawer-body" id="cart-items">
+      <div class="cart-empty" id="cart-empty">
+        <i class="fas fa-shopping-bag"></i>
+        <p>Your cart is empty</p>
+        <button class="btn-shop-now" onclick="app.closeCart()">Continue Shopping</button>
+      </div>
+    </div>
+    <div class="drawer-foot" id="cart-footer" style="display:none">
+      <div class="bundle-deal-banner" id="bundle-deal-banner" style="display:none" onclick="app.applyBundleDeal()">
+        <i class="fas fa-tags"></i>
+        <div><strong>Bundle Deal! Add 1 more item → get 10% off</strong><span>Tap to auto-apply at checkout</span></div>
+      </div>
+      <div class="coupon-row">
+        <input type="text" id="coupon-input" placeholder="Promo code (WELCOME10)" class="coupon-field" />
+        <button class="coupon-btn" id="btn-apply-coupon">Apply</button>
+      </div>
+      <div class="coupon-msg" id="coupon-msg"></div>
+      <label class="gift-wrap-option">
+        <input type="checkbox" id="gift-wrap-checkbox" onchange="app.toggleGiftWrap(this.checked)" />
+        <i class="fas fa-gift" style="color:var(--pink)"></i>
+        <span>Add Gift Wrap</span>
+        <span class="gift-price" id="gift-wrap-price">+$2.00</span>
+      </label>
+      <div class="cart-totals">
+        <div class="total-row"><span>Subtotal</span><span id="cart-subtotal">$0.00</span></div>
+        <div class="total-row disc-row hidden" id="discount-row"><span>Discount</span><span id="cart-discount"
+            style="color:var(--pink)">-$0.00</span></div>
+        <div class="total-row hidden" id="gift-wrap-row"><span>🎁 Gift Wrap</span><span id="cart-gift-wrap">$2.00</span>
+        </div>
+        <div class="total-row"><span>Shipping</span><span id="cart-shipping">$12.00</span></div>
+        <div class="total-row"><span>Tax (13%)</span><span id="cart-tax">$0.00</span></div>
+        <div class="total-row total-final"><span>Total</span><span id="cart-total">$0.00</span></div>
+      </div>
+      <button class="btn-add-to-cart" style="width:100%" id="btn-checkout">PROCEED TO CHECKOUT</button>
+    </div>
+  </aside>
+
+  <!-- ===================== WISHLIST DRAWER ===================== -->
+  <aside class="drawer" id="wishlist-drawer">
+    <div class="drawer-head">
+      <h3>Wishlist <span class="dbadge" id="wishlist-drawer-count">0</span></h3>
+      <button class="drawer-close" id="close-wishlist"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="drawer-body" id="wishlist-items">
+      <div class="cart-empty" id="wishlist-empty">
+        <i class="fas fa-heart"></i>
+        <p>Your wishlist is empty</p>
+        <button class="btn-shop-now" onclick="app.closeWishlist()">Discover Products</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===================== AUTH MODAL ===================== -->
+  <div class="modal" id="auth-modal">
+    <div class="modal-box">
+      <button class="modal-close" id="close-auth"><i class="fas fa-times"></i></button>
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">LOGIN</button>
+        <button class="auth-tab" data-tab="register">REGISTER</button>
+      </div>
+      <form id="login-form" class="auth-form">
+        <div class="auth-header">
+          <h2>Welcome Back</h2>
+          <p>Sign in to your account</p>
+        </div>
+        <div class="fg"><label>Email</label>
+          <div class="iw"><i class="fas fa-envelope"></i><input type="email" name="email" required
+              placeholder="you@example.com" /></div>
+        </div>
+        <div class="fg"><label>Password</label>
+          <div class="iw"><i class="fas fa-lock"></i><input type="password" name="password" required
+              placeholder="Your password" /><button type="button" class="toggle-pass"><i
+                class="fas fa-eye"></i></button></div>
+        </div>
+        <div class="fg-row"><label class="check-label"><input type="checkbox" /> Remember me</label><button
+            type="button" class="link-btn" id="btn-forgot">Forgot password?</button></div>
+        <button type="submit" class="btn-add-to-cart" style="width:100%">SIGN IN</button>
+        <p class="auth-switch">No account? <button type="button" class="link-btn" data-switch="register">Register
+            here</button></p>
+
+        <!-- Demo credentials panel -->
+        <div class="demo-creds-panel">
+          <p class="demo-creds-title"><i class="fas fa-key"></i> Demo Credentials</p>
+          <div class="demo-cred-row"
+            onclick="document.querySelector('#login-form [name=email]').value='admin@surajcommerce.com';document.querySelector('#login-form [name=password]').value='Admin@1234'">
+            <span class="demo-cred-badge admin-badge"><i class="fas fa-crown"></i> ADMIN</span>
+            <span class="demo-cred-info">
+              <span class="demo-cred-email">admin@surajcommerce.com</span>
+              <span class="demo-cred-pass">Admin@1234</span>
+            </span>
+            <span class="demo-cred-fill">Click to fill</span>
+          </div>
+          <div class="demo-cred-row"
+            onclick="document.querySelector('#login-form [name=email]').value='seller@surajcommerce.com';document.querySelector('#login-form [name=password]').value='Seller@1234'">
+            <span class="demo-cred-badge seller-badge"><i class="fas fa-store"></i> SELLER</span>
+            <span class="demo-cred-info">
+              <span class="demo-cred-email">seller@surajcommerce.com</span>
+              <span class="demo-cred-pass">Seller@1234</span>
+            </span>
+            <span class="demo-cred-fill">Click to fill</span>
+          </div>
+        </div>
+      </form>
+      <form id="register-form" class="auth-form hidden">
+        <div class="auth-header">
+          <h2>Create Account</h2>
+          <p>Join thousands of shoppers</p>
+        </div>
+        <div class="fg"><label>Full Name</label>
+          <div class="iw"><i class="fas fa-user"></i><input type="text" name="name" required
+              placeholder="Your full name" /></div>
+        </div>
+        <div class="fg"><label>Email</label>
+          <div class="iw"><i class="fas fa-envelope"></i><input type="email" name="email" required
+              placeholder="you@example.com" /></div>
+        </div>
+        <div class="fg"><label>Password</label>
+          <div class="iw"><i class="fas fa-lock"></i><input type="password" name="password" required
+              placeholder="Min 6 characters" minlength="6" /><button type="button" class="toggle-pass"><i
+                class="fas fa-eye"></i></button></div>
+        </div>
+        <div class="fg"><label>Account Type</label><select name="role" class="sort-sel" style="width:100%;padding:10px">
+            <option value="customer">Customer</option>
+            <option value="seller">Seller</option>
+          </select></div>
+        <button type="submit" class="btn-add-to-cart" style="width:100%">CREATE ACCOUNT</button>
+        <p class="auth-switch">Have account? <button type="button" class="link-btn" data-switch="login">Login</button>
+        </p>
+      </form>
+      <form id="forgot-form" class="auth-form hidden">
+        <div class="auth-header">
+          <h2>Reset Password</h2>
+          <p>We'll email you a reset link</p>
+        </div>
+        <div class="fg"><label>Email</label>
+          <div class="iw"><i class="fas fa-envelope"></i><input type="email" name="email" required
+              placeholder="you@example.com" /></div>
+        </div>
+        <button type="submit" class="btn-add-to-cart" style="width:100%">SEND RESET LINK</button>
+        <p class="auth-switch"><button type="button" class="link-btn" data-switch="login">← Back to Login</button></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== NEWSLETTER MODAL ===================== -->
+  <div class="modal" id="newsletter-modal">
+    <div class="modal-box newsletter-modal-box">
+      <button class="modal-close pink-close" id="close-newsletter"><i class="fas fa-times"></i></button>
+      <div class="nl-modal-img">
+        <img src="assets/images/newsletter.png" alt="" />
+      </div>
+      <div class="nl-modal-content">
+        <h3>Subscribe Newsletter.</h3>
+        <p>Subscribe the <strong>Suraj</strong> to get latest products and discount update.</p>
+        <form id="newsletter-form">
+          <input type="email" placeholder="Email Address" required class="nl-input" />
+          <button type="submit" class="btn-dark-sub">SUBSCRIBE</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== PRODUCT DETAIL MODAL ===================== -->
+  <div class="modal modal-lg" id="product-modal">
+    <div class="modal-box product-modal-box">
+      <button class="modal-close" id="close-product-modal"><i class="fas fa-times"></i></button>
+      <div class="product-detail-grid">
+        <div class="product-gallery">
+          <div class="gallery-main"><img id="gallery-main-img" src="" alt="" /><span class="gallery-badge hidden"
+              id="gallery-badge"></span></div>
+          <div class="gallery-thumbs" id="gallery-thumbs"></div>
+        </div>
+        <div class="product-info">
+          <span class="prod-cat-label" id="modal-category"></span>
+          <h2 id="modal-title"></h2>
+          <div class="prod-rating-row">
+            <div class="stars-row" id="modal-stars"></div>
+            <span id="modal-reviews-count"></span>
+            <span class="stock-pill" id="modal-stock"></span>
+          </div>
+          <div class="prod-price-row">
+            <span class="prod-price" id="modal-price"></span>
+            <span class="prod-original" id="modal-original-price"></span>
+            <span class="prod-disc-badge hidden" id="modal-discount-badge"></span>
+          </div>
+          <p class="prod-desc" id="modal-desc"></p>
+          <p class="prod-seller"><i class="fas fa-store"></i> Sold by <strong id="modal-seller"></strong></p>
+          <div id="modal-variants"></div>
+          <div class="qty-row">
+            <label>Qty:</label>
+            <div class="qty-ctrl">
+              <button class="qty-btn" id="modal-qty-minus">−</button>
+              <input type="number" id="modal-qty" value="1" min="1" max="99" class="qty-inp" />
+              <button class="qty-btn" id="modal-qty-plus">+</button>
+            </div>
+          </div>
+          <div class="prod-actions">
+            <button class="btn-add-to-cart flex-1" id="modal-add-cart">ADD TO CART</button>
+            <button class="btn-wishlist-icon" id="modal-wishlist"><i class="fas fa-heart"></i></button>
+          </div>
+          <div id="back-in-stock-section" class="hidden">
+            <p style="font-size:12px;color:var(--text-3);margin-bottom:6px">📬 Get notified when this is back in stock:
+            </p>
+            <div class="back-in-stock-form">
+              <input class="bis-input" type="email" id="bis-email" placeholder="your@email.com" />
+              <button class="bis-btn" onclick="app.submitBackInStock()">Notify Me</button>
+            </div>
+          </div>
+          <div id="viewers-badge" class="viewers-badge">
+            <div class="viewers-dot"></div>
+            <span id="viewers-count">12</span> people viewing this right now
+          </div>
+          <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">
+            <button class="price-drop-btn" id="price-drop-btn" onclick="app.togglePriceDrop(app._currentId||'',this)">
+              <i class="fas fa-bell"></i> Notify me if price drops
+            </button>
+            <button class="price-drop-btn" onclick="app.openSizeGuide()">
+              <i class="fas fa-ruler"></i> Size Guide
+            </button>
+          </div>
+          <div class="share-btn-row">
+            <button class="share-btn fb" onclick="app.shareProduct('facebook')"><i class="fab fa-facebook"></i>
+              Share</button>
+            <button class="share-btn wa" onclick="app.shareProduct('whatsapp')"><i class="fab fa-whatsapp"></i>
+              Share</button>
+            <button class="share-btn tw" onclick="app.shareProduct('twitter')"><i class="fab fa-twitter"></i>
+              Tweet</button>
+            <button class="share-btn cp" onclick="app.shareProduct('copy')"><i class="fas fa-link"></i> Copy</button>
+          </div>
+          <div class="reviews-wrap">
+            <h4>Customer Reviews</h4>
+            <div id="modal-reviews-list">
+              <p class="reviews-loading">Loading reviews...</p>
+            </div>
+            <button class="link-btn" id="modal-write-review" style="margin-top:10px">+ Write a Review</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== REVIEW MODAL ===================== -->
+  <div class="modal" id="review-modal">
+    <div class="modal-box">
+      <button class="modal-close" id="close-review-modal"><i class="fas fa-times"></i></button>
+      <h3 style="margin-bottom:20px;font-weight:800">Write a Review</h3>
+      <form id="review-form">
+        <input type="hidden" id="review-product-id" />
+        <div class="fg"><label>Rating</label>
+          <div class="star-rating-inp" id="star-rating-input">
+            <button type="button" data-val="1">★</button><button type="button" data-val="2">★</button>
+            <button type="button" data-val="3">★</button><button type="button" data-val="4">★</button>
+            <button type="button" data-val="5">★</button>
+          </div><input type="hidden" id="review-rating" value="0" />
+        </div>
+        <div class="fg"><label>Title</label><input type="text" id="review-title" class="sort-sel"
+            style="width:100%;padding:10px" required placeholder="Summarize your experience" /></div>
+        <div class="fg"><label>Review</label><textarea id="review-body"
+            style="width:100%;padding:10px;border:1.5px solid #eee;border-radius:4px;resize:vertical;font-family:inherit"
+            required rows="4" placeholder="Tell others what you think..."></textarea></div>
+        <button type="submit" class="btn-add-to-cart" style="width:100%;margin-top:8px">SUBMIT REVIEW</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== CHECKOUT MODAL ===================== -->
+  <div class="modal modal-lg" id="checkout-modal">
+    <div class="modal-box checkout-box">
+      <button class="modal-close" id="close-checkout"><i class="fas fa-times"></i></button>
+      <h2 class="checkout-heading"><i class="fas fa-lock"></i> Secure Checkout</h2>
+      <div class="checkout-steps">
+        <div class="cstep active" data-step="1"><span class="cstep-num">1</span> Shipping</div>
+        <div class="cstep-div"></div>
+        <div class="cstep" data-step="2"><span class="cstep-num">2</span> Payment</div>
+        <div class="cstep-div"></div>
+        <div class="cstep" data-step="3"><span class="cstep-num">3</span> Confirm</div>
+      </div>
+      <form id="shipping-form" class="cstep-pane active">
+        <div class="form-grid-2">
+          <div class="fg"><label>Full Name *</label><input type="text" name="fullName" required class="fp-input"
+              placeholder="John Doe" /></div>
+          <div class="fg"><label>Email *</label><input type="email" name="email" required class="fp-input"
+              placeholder="you@example.com" /></div>
+
+          <!-- USD phone -->
+          <div class="fg usd-field"><label>Phone</label><input type="tel" name="phone" class="fp-input"
+              placeholder="+1 555 000 0000" /></div>
+          <!-- NPR phone -->
+          <div class="fg npr-field hidden"><label>Phone (Nepal) *</label><input type="tel" name="phone_npr"
+              class="fp-input" placeholder="+977-98XXXXXXXX" /></div>
+
+          <!-- USD address -->
+          <div class="fg col-2 usd-field"><label>Street Address *</label><input type="text" name="street" required
+              class="fp-input" placeholder="123 Main St" /></div>
+          <div class="fg usd-field"><label>City *</label><input type="text" name="city" required class="fp-input"
+              placeholder="Toronto" /></div>
+          <div class="fg usd-field"><label>Province/State *</label><input type="text" name="state" required
+              class="fp-input" placeholder="Ontario" /></div>
+          <div class="fg usd-field"><label>Postal Code *</label><input type="text" name="postalCode" class="fp-input"
+              placeholder="M5V 2T6" /></div>
+          <div class="fg usd-field"><label>Country</label><select name="country" class="fp-input">
+              <option>United States</option>
+              <option>Canada</option>
+              <option>United Kingdom</option>
+              <option>Australia</option>
+            </select></div>
+
+          <!-- NPR / Nepal address -->
+          <div class="fg col-2 npr-field hidden"><label>Tole / Street *</label><input type="text" name="street_npr"
+              class="fp-input" placeholder="Tole, Street name" /></div>
+          <div class="fg npr-field hidden"><label>City / Municipality *</label>
+            <select name="city_npr" class="fp-input">
+              <option value="">Select City</option>
+              <optgroup label="Bagmati Province">
+                <option>Kathmandu</option>
+                <option>Lalitpur (Patan)</option>
+                <option>Bhaktapur</option>
+                <option>Kirtipur</option>
+                <option>Hetauda</option>
+              </optgroup>
+              <optgroup label="Gandaki Province">
+                <option>Pokhara</option>
+                <option>Waling</option>
+                <option>Baglung</option>
+              </optgroup>
+              <optgroup label="Madhesh Province">
+                <option>Janakpur</option>
+                <option>Birgunj</option>
+                <option>Rajbiraj</option>
+              </optgroup>
+              <optgroup label="Lumbini Province">
+                <option>Butwal</option>
+                <option>Rupandehi</option>
+                <option>Dang</option>
+              </optgroup>
+              <optgroup label="Koshi Province">
+                <option>Biratnagar</option>
+                <option>Dharan</option>
+                <option>Itahari</option>
+              </optgroup>
+              <optgroup label="Sudurpashchim Province">
+                <option>Dhangadhi</option>
+                <option>Mahendranagar</option>
+              </optgroup>
+              <optgroup label="Karnali Province">
+                <option>Surkhet</option>
+                <option>Jumla</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="fg npr-field hidden"><label>Province *</label>
+            <select name="province_npr" class="fp-input">
+              <option value="">Select Province</option>
+              <option>Koshi Province (Province 1)</option>
+              <option>Madhesh Province (Province 2)</option>
+              <option>Bagmati Province (Province 3)</option>
+              <option>Gandaki Province (Province 4)</option>
+              <option>Lumbini Province (Province 5)</option>
+              <option>Karnali Province (Province 6)</option>
+              <option>Sudurpashchim Province (Province 7)</option>
+            </select>
+          </div>
+          <div class="fg npr-field hidden"><label>Nearest Landmark</label><input type="text" name="landmark_npr"
+              class="fp-input" placeholder="Near school, chowk, etc." /></div>
+          <div class="fg npr-field hidden"><label>Delivery Zone</label>
+            <select name="zone_npr" class="fp-input">
+              <option value="valley">Inside Kathmandu Valley (1–2 days · रू 100)</option>
+              <option value="outside">Outside Valley (3–7 days · रू 200)</option>
+              <option value="remote">Remote Area (7–14 days · रू 350)</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn-add-to-cart" style="width:100%;margin-top:16px">CONTINUE TO PAYMENT →</button>
+      </form>
+      <div id="payment-step" class="cstep-pane hidden">
+        <div class="order-summary-mini" id="checkout-summary"></div>
+
+        <!-- USD / Card Payment -->
+        <div id="usd-payment-section">
+          <div class="stripe-wrap">
+            <h4><i class="fas fa-credit-card"></i> Card Details</h4>
+            <div id="stripe-card-element" class="stripe-card-el"></div>
+            <div id="stripe-error" class="stripe-err hidden"></div>
+            <p class="test-card-note">Test card: 4242 4242 4242 4242 · Any future date · Any CVC</p>
+          </div>
+        </div>
+
+        <!-- NPR / Nepali Payment -->
+        <div id="npr-payment-section" class="hidden">
+          <p class="payment-method-label">Choose Payment Method</p>
+          <div class="payment-methods-grid">
+
+            <!-- eSewa -->
+            <label class="pay-method-card esewa">
+              <input type="radio" name="npr-payment" value="esewa" />
+              <div class="pay-method-inner">
+                <div class="pay-method-logo esewa-logo">
+                  <svg width="26" height="26" viewBox="0 0 40 40" fill="none">
+                    <circle cx="20" cy="20" r="20" fill="#60bb46" /><text x="50%" y="56%" dominant-baseline="middle"
+                      text-anchor="middle" fill="#fff" font-size="12" font-weight="800" font-family="Arial">eS</text>
+                  </svg>
+                </div>
+                <span>eSewa</span>
+              </div>
+            </label>
+
+            <!-- Khalti -->
+            <label class="pay-method-card khalti">
+              <input type="radio" name="npr-payment" value="khalti" />
+              <div class="pay-method-inner">
+                <div class="pay-method-logo khalti-logo">
+                  <svg width="26" height="26" viewBox="0 0 40 40" fill="none">
+                    <circle cx="20" cy="20" r="20" fill="#5c2d91" /><text x="50%" y="56%" dominant-baseline="middle"
+                      text-anchor="middle" fill="#fff" font-size="11" font-weight="800" font-family="Arial">KH</text>
+                  </svg>
+                </div>
+                <span>Khalti</span>
+              </div>
+            </label>
+
+            <!-- Nepali QR / FonePay -->
+            <label class="pay-method-card fonepay">
+              <input type="radio" name="npr-payment" value="fonepay" />
+              <div class="pay-method-inner">
+                <div class="pay-method-logo fonepay-logo">
+                  <svg width="26" height="26" viewBox="0 0 40 40" fill="none">
+                    <circle cx="20" cy="20" r="20" fill="#e2231a" /><text x="50%" y="56%" dominant-baseline="middle"
+                      text-anchor="middle" fill="#fff" font-size="9" font-weight="800" font-family="Arial">QR</text>
+                  </svg>
+                </div>
+                <span>Nepali QR</span>
+              </div>
+            </label>
+
+            <!-- IME Pay -->
+            <label class="pay-method-card imepay">
+              <input type="radio" name="npr-payment" value="imepay" />
+              <div class="pay-method-inner">
+                <div class="pay-method-logo imepay-logo">
+                  <svg width="26" height="26" viewBox="0 0 40 40" fill="none">
+                    <circle cx="20" cy="20" r="20" fill="#f7941d" /><text x="50%" y="56%" dominant-baseline="middle"
+                      text-anchor="middle" fill="#fff" font-size="10" font-weight="800" font-family="Arial">IME</text>
+                  </svg>
+                </div>
+                <span>IME Pay</span>
+              </div>
+            </label>
+
+            <!-- ConnectIPS -->
+            <label class="pay-method-card connectips">
+              <input type="radio" name="npr-payment" value="connectips" />
+              <div class="pay-method-inner">
+                <div class="pay-method-logo connectips-logo">
+                  <svg width="26" height="26" viewBox="0 0 40 40" fill="none">
+                    <circle cx="20" cy="20" r="20" fill="#003e7e" /><text x="50%" y="56%" dominant-baseline="middle"
+                      text-anchor="middle" fill="#fff" font-size="9" font-weight="800" font-family="Arial">CiPS</text>
+                  </svg>
+                </div>
+                <span>ConnectIPS</span>
+              </div>
+            </label>
+
+            <!-- Cash on Delivery -->
+            <label class="pay-method-card cod">
+              <input type="radio" name="npr-payment" value="cod" checked />
+              <div class="pay-method-inner">
+                <div class="pay-method-logo cod-logo">
+                  <svg width="26" height="26" viewBox="0 0 40 40" fill="none">
+                    <circle cx="20" cy="20" r="20" fill="#f57c00" /><text x="50%" y="56%" dominant-baseline="middle"
+                      text-anchor="middle" fill="#fff" font-size="9" font-weight="800" font-family="Arial">COD</text>
+                  </svg>
+                </div>
+                <span>Cash on Delivery</span>
+              </div>
+            </label>
+
+          </div>
+
+          <!-- eSewa details -->
+          <div class="pay-detail-box esewa-detail hidden">
+            <div class="pay-detail-header esewa-header">
+              <div class="pay-brand-badge esewa-badge">eSewa</div>
+              <div>
+                <p class="pay-detail-title" style="color:#60bb46;margin:0"><i class="fas fa-mobile-alt"></i> eSewa
+                  Digital Wallet</p>
+                <p class="pay-sub">Nepal's most trusted digital payment</p>
+              </div>
+            </div>
+            <div class="pay-two-col">
+              <div class="pay-qr-side">
+                <canvas id="esewa-qr" width="130" height="130" class="qr-canvas"></canvas>
+                <p class="qr-label">Scan with eSewa App</p>
+                <p class="qr-id">ID: <strong>9801234567</strong></p>
+              </div>
+              <div class="pay-steps-side">
+                <p class="pay-or-divider">— OR follow steps —</p>
+                <ol class="pay-instructions">
+                  <li>Open <strong>eSewa</strong> app</li>
+                  <li>Tap <strong>Send Money</strong></li>
+                  <li>Enter ID: <strong class="pay-id">9801234567</strong></li>
+                  <li>Amount: <strong id="esewa-amount" class="pay-amt"></strong></li>
+                  <li>Complete payment &amp; enter your ID below</li>
+                </ol>
+                <div class="fg" style="margin-top:10px">
+                  <label>Your eSewa ID / Phone</label>
+                  <input type="text" id="esewa-id" class="fp-input" placeholder="98XXXXXXXX" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Khalti details -->
+          <div class="pay-detail-box khalti-detail hidden">
+            <div class="pay-detail-header khalti-header">
+              <div class="pay-brand-badge khalti-badge">Khalti</div>
+              <div>
+                <p class="pay-detail-title" style="color:#5c2d91;margin:0"><i class="fas fa-mobile-alt"></i> Khalti
+                  Digital Wallet</p>
+                <p class="pay-sub">Pay smart, pay with Khalti</p>
+              </div>
+            </div>
+            <div class="pay-two-col">
+              <div class="pay-qr-side">
+                <canvas id="khalti-qr" width="130" height="130" class="qr-canvas"></canvas>
+                <p class="qr-label">Scan with Khalti App</p>
+                <p class="qr-id">ID: <strong>9801234567</strong></p>
+              </div>
+              <div class="pay-steps-side">
+                <p class="pay-or-divider">— OR follow steps —</p>
+                <ol class="pay-instructions">
+                  <li>Open <strong>Khalti</strong> app</li>
+                  <li>Tap <strong>Pay</strong></li>
+                  <li>Enter ID: <strong class="pay-id">9801234567</strong></li>
+                  <li>Amount: <strong id="khalti-amount" class="pay-amt"></strong></li>
+                  <li>Complete payment &amp; enter your ID below</li>
+                </ol>
+                <div class="fg" style="margin-top:10px">
+                  <label>Your Khalti ID / Phone</label>
+                  <input type="text" id="khalti-id" class="fp-input" placeholder="98XXXXXXXX" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nepali QR / FonePay details -->
+          <div class="pay-detail-box fonepay-detail hidden">
+            <div class="pay-detail-header fonepay-header">
+              <div class="pay-brand-badge fonepay-badge">QR</div>
+              <div>
+                <p class="pay-detail-title" style="color:#e2231a;margin:0"><i class="fas fa-qrcode"></i> Nepali QR
+                  Payment</p>
+                <p class="pay-sub">Scan with any Nepali banking app — FonePay, eSewa, Khalti, NIC Asia, Nabil &amp; more
+                </p>
+              </div>
+            </div>
+            <div class="nepali-qr-center">
+              <div class="nepali-qr-wrap">
+                <div class="qr-top-bar"><span class="qr-flag">🇳🇵</span> <strong>Nepali QR</strong> <span
+                    class="qr-powered">Powered by FonePay</span></div>
+                <canvas id="nepali-qr" width="180" height="180" class="qr-canvas qr-main"></canvas>
+                <div class="qr-amount-display"><span class="qr-amt-label">Total Amount</span><span class="qr-amt-value"
+                    id="qr-amt-display">रू 0.00</span></div>
+                <div class="qr-merchant-info">
+                  <span><i class="fas fa-store"></i> Suraj Commerce Hub</span>
+                  <span><i class="fas fa-map-marker-alt"></i> Kathmandu, Nepal</span>
+                </div>
+                <button class="qr-download-btn" id="qr-download-btn"><i class="fas fa-download"></i> Save QR</button>
+              </div>
+              <div class="qr-accepted-apps">
+                <p class="qr-apps-title">Accepted on all major apps:</p>
+                <div class="qr-app-pills">
+                  <span class="qr-pill esewa-pill">eSewa</span>
+                  <span class="qr-pill khalti-pill">Khalti</span>
+                  <span class="qr-pill" style="background:#e2231a">FonePay</span>
+                  <span class="qr-pill" style="background:#f7941d">IME Pay</span>
+                  <span class="qr-pill" style="background:#003e7e">ConnectIPS</span>
+                  <span class="qr-pill" style="background:#e31837">Nabil</span>
+                  <span class="qr-pill" style="background:#00529b">NIC Asia</span>
+                  <span class="qr-pill" style="background:#00853e">Prabhu Pay</span>
+                </div>
+              </div>
+            </div>
+            <div class="fg" style="margin-top:12px">
+              <label>Transaction / Reference ID (after payment)</label>
+              <input type="text" id="fonepay-ref" class="fp-input" placeholder="Enter transaction reference number" />
+            </div>
+          </div>
+
+          <!-- IME Pay details -->
+          <div class="pay-detail-box imepay-detail hidden">
+            <div class="pay-detail-header imepay-header">
+              <div class="pay-brand-badge imepay-badge">IME</div>
+              <div>
+                <p class="pay-detail-title" style="color:#f7941d;margin:0"><i class="fas fa-mobile-alt"></i> IME Pay</p>
+                <p class="pay-sub">Simple, fast and secure payments</p>
+              </div>
+            </div>
+            <div class="pay-two-col">
+              <div class="pay-qr-side">
+                <canvas id="imepay-qr" width="130" height="130" class="qr-canvas"></canvas>
+                <p class="qr-label">Scan with IME Pay</p>
+                <p class="qr-id">ID: <strong>9801234567</strong></p>
+              </div>
+              <div class="pay-steps-side">
+                <p class="pay-or-divider">— OR follow steps —</p>
+                <ol class="pay-instructions">
+                  <li>Open <strong>IME Pay</strong> app</li>
+                  <li>Tap <strong>Send Money</strong></li>
+                  <li>Enter ID: <strong class="pay-id">9801234567</strong></li>
+                  <li>Amount: <strong id="imepay-amount" class="pay-amt"></strong></li>
+                  <li>Enter your IME Pay number below</li>
+                </ol>
+                <div class="fg" style="margin-top:10px">
+                  <label>Your IME Pay Number</label>
+                  <input type="text" id="imepay-id" class="fp-input" placeholder="98XXXXXXXX" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ConnectIPS details -->
+          <div class="pay-detail-box connectips-detail hidden">
+            <div class="pay-detail-header connectips-header">
+              <div class="pay-brand-badge connectips-badge">CiPS</div>
+              <div>
+                <p class="pay-detail-title" style="color:#003e7e;margin:0"><i class="fas fa-university"></i> ConnectIPS
+                  Bank Transfer</p>
+                <p class="pay-sub">Interbank fund transfer via NPS Clearing</p>
+              </div>
+            </div>
+            <ol class="pay-instructions">
+              <li>Login to <strong>connectips.com</strong></li>
+              <li>Go to <strong>Fund Transfer → IPS Transfer</strong></li>
+              <li>Account No: <strong class="pay-id">1234567890123456</strong></li>
+              <li>Bank: <strong>Nabil Bank Ltd</strong></li>
+              <li>Amount: <strong id="cips-amount" class="pay-amt"></strong></li>
+              <li>Remarks: <strong>Suraj Commerce Order</strong></li>
+            </ol>
+            <div class="fg" style="margin-top:10px">
+              <label>Transaction Reference No.</label>
+              <input type="text" id="cips-ref" class="fp-input" placeholder="Enter reference number" />
+            </div>
+          </div>
+
+          <!-- COD note -->
+          <div class="pay-detail-box cod-detail">
+            <div class="pay-detail-header cod-header">
+              <div class="pay-brand-badge cod-badge"><i class="fas fa-truck"></i></div>
+              <div>
+                <p class="pay-detail-title" style="color:#f57c00;margin:0"><i class="fas fa-truck"></i> Cash on Delivery
+                </p>
+                <p class="pay-sub">Pay when your package arrives</p>
+              </div>
+            </div>
+            <div class="cod-info-grid">
+              <div class="cod-info-item"><i class="fas fa-map-marker-alt" style="color:#f57c00"></i><span>Available all
+                  across Nepal</span></div>
+              <div class="cod-info-item"><i class="fas fa-clock" style="color:#f57c00"></i><span>Delivery in 1–5
+                  business days</span></div>
+              <div class="cod-info-item"><i class="fas fa-rupee-sign" style="color:#f57c00"></i><span>Extra रू 50 charge
+                  for orders below रू 1,000</span></div>
+              <div class="cod-info-item"><i class="fas fa-shield-alt" style="color:#f57c00"></i><span>100% secure —
+                  inspect before you pay</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-top:16px">
+          <button class="btn-outline-back" id="back-to-shipping">← Back</button>
+          <button class="btn-add-to-cart flex-1" id="btn-pay">PAY <span id="pay-amount"></span></button>
+        </div>
+      </div>
+      <div id="confirm-step" class="cstep-pane hidden">
+        <div class="order-success-wrap">
+          <div class="success-icon-wrap"><i class="fas fa-check-circle"></i></div>
+          <h2>Order Confirmed!</h2>
+          <p class="order-num-label" id="confirm-order-number"></p>
+          <p>Thank you! A confirmation email has been sent.</p>
+          <div class="confirm-details-box" id="confirm-details"></div>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <button class="btn-add-to-cart" onclick="app.closeCheckout()">CONTINUE SHOPPING</button>
+            <button class="print-btn" onclick="app.printReceipt()"><i class="fas fa-print"></i> Print Receipt</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== ACCOUNT MODAL ===================== -->
+  <!-- ===================== USER DASHBOARD ===================== -->
+  <div class="dashboard-overlay" id="user-dashboard">
+    <div class="dashboard user-dash">
+      <aside class="dash-sidebar">
+        <div class="dash-brand"><i class="fas fa-user-circle"></i><span>My Account</span></div>
+        <nav class="dash-nav">
+          <button class="dash-nav-item active" data-pane="u-profile"><i class="fas fa-user"></i> Profile</button>
+          <button class="dash-nav-item" data-pane="u-orders"><i class="fas fa-box"></i> My Orders</button>
+          <button class="dash-nav-item" data-pane="u-wishlist"><i class="fas fa-heart"></i> Wishlist</button>
+          <button class="dash-nav-item" data-pane="u-address"><i class="fas fa-map-marker-alt"></i> Address</button>
+          <button class="dash-nav-item" data-pane="u-reviews"><i class="fas fa-star"></i> My Reviews</button>
+        </nav>
+        <div class="dash-sidebar-footer">
+          <div class="dash-user-info" id="u-sidebar-info">
+            <div class="dash-avatar-circle" id="u-avatar-circle">U</div>
+            <div>
+              <p class="dash-user-name" id="u-sidebar-name">User</p>
+              <p class="dash-user-role">Customer</p>
+            </div>
+          </div>
+          <button class="dash-logout-btn" id="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+      </aside>
+      <main class="dash-main">
+        <button class="dash-close-btn" id="close-user-dash"><i class="fas fa-times"></i></button>
+
+        <!-- Profile pane -->
+        <div class="dash-pane active" id="u-profile">
+          <div class="dash-pane-header">
+            <h2><i class="fas fa-user"></i> My Profile</h2>
+            <p>Manage your account information</p>
+          </div>
+          <div class="dash-profile-card">
+            <div class="profile-avatar-wrap">
+              <img id="profile-avatar" src="assets/images/testimonial-1.jpg" class="profile-avatar" alt="" />
+              <div class="profile-avatar-edit"><i class="fas fa-camera"></i></div>
+            </div>
+            <div class="profile-meta">
+              <h3 id="profile-name-display">User</h3>
+              <span class="role-chip" id="profile-role-badge">Customer</span>
+              <p id="u-member-since" style="font-size:11px;color:var(--text-3);margin-top:4px">Member since 2024</p>
+            </div>
+          </div>
+          <form id="profile-form" class="dash-form">
+            <div class="form-grid-2">
+              <div class="fg col-2"><label>Full Name</label><input type="text" name="name" id="profile-name"
+                  class="fp-input" /></div>
+              <div class="fg col-2"><label>Email <span style="color:#999">(read-only)</span></label><input type="email"
+                  id="profile-email" class="fp-input" readonly /></div>
+              <div class="fg"><label>Phone</label><input type="tel" name="phone" id="profile-phone" class="fp-input"
+                  placeholder="98XXXXXXXX" /></div>
+              <div class="fg"><label>Country</label><input type="text" name="country" id="profile-country"
+                  class="fp-input" placeholder="Nepal" /></div>
+              <div class="fg"><label>Current Password</label><input type="password" name="currentPassword"
+                  id="profile-current-pass" class="fp-input" placeholder="••••••••" /></div>
+              <div class="fg"><label>New Password</label><input type="password" name="newPassword" id="profile-new-pass"
+                  class="fp-input" placeholder="Min 6 chars" /></div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:16px">
+              <button type="submit" class="btn-add-to-cart"><i class="fas fa-save"></i> Save Changes</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Orders pane -->
+        <div class="dash-pane hidden" id="u-orders">
+          <div class="dash-pane-header">
+            <h2><i class="fas fa-box"></i> My Orders</h2>
+            <p>Track and manage your purchases</p>
+          </div>
+          <div id="orders-list">
+            <p class="dash-empty">No orders yet. Start shopping!</p>
+          </div>
+          <div class="dash-section-divider">
+            <h5>📦 Order Tracking</h5>
+            <p>Live status of your most recent order</p>
+          </div>
+          <div class="order-timeline" id="order-timeline"></div>
+        </div>
+
+        <!-- Wishlist pane -->
+        <div class="dash-pane hidden" id="u-wishlist">
+          <div class="dash-pane-header">
+            <h2><i class="fas fa-heart"></i> My Wishlist</h2>
+            <p>Items you've saved for later</p>
+          </div>
+          <div id="u-wishlist-grid" class="dash-wishlist-grid"></div>
+        </div>
+
+        <!-- Address pane -->
+        <div class="dash-pane hidden" id="u-address">
+          <div class="dash-pane-header">
+            <h2><i class="fas fa-map-marker-alt"></i> Saved Address</h2>
+            <p>Default shipping address</p>
+          </div>
+          <div class="dash-address-card" id="u-address-display">
+            <p style="color:var(--text-3)">No saved address yet.</p>
+          </div>
+          <form class="dash-form" id="u-address-form" style="margin-top:16px">
+            <div class="form-grid-2">
+              <div class="fg col-2"><label>Street / Area</label><input type="text" name="street" class="fp-input"
+                  placeholder="Thamel, Kathmandu" /></div>
+              <div class="fg"><label>City</label><input type="text" name="city" class="fp-input"
+                  placeholder="Kathmandu" /></div>
+              <div class="fg"><label>Province</label><input type="text" name="province" class="fp-input"
+                  placeholder="Bagmati" /></div>
+              <div class="fg"><label>Postal Code</label><input type="text" name="postal" class="fp-input"
+                  placeholder="44600" /></div>
+              <div class="fg"><label>Country</label><input type="text" name="country" class="fp-input" value="Nepal" />
+              </div>
+            </div>
+            <button type="submit" class="btn-add-to-cart" style="margin-top:12px"><i class="fas fa-save"></i> Save
+              Address</button>
+          </form>
+        </div>
+
+        <!-- Reviews pane -->
+        <div class="dash-pane hidden" id="u-reviews">
+          <div class="dash-pane-header">
+            <h2><i class="fas fa-star"></i> My Reviews</h2>
+            <p>Your product reviews and ratings</p>
+          </div>
+          <div id="u-reviews-list" class="dash-empty">You haven't written any reviews yet.</div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ===================== ADMIN DASHBOARD ===================== -->
+  <div class="dashboard-overlay" id="admin-dashboard">
+    <div class="dashboard admin-dash">
+      <aside class="dash-sidebar admin-sidebar">
+        <div class="dash-brand admin-brand"><i class="fas fa-crown"></i><span>Admin Panel</span></div>
+        <nav class="dash-nav">
+          <button class="dash-nav-item active" data-pane="a-overview"><i class="fas fa-tachometer-alt"></i>
+            Overview</button>
+          <button class="dash-nav-item" data-pane="a-products"><i class="fas fa-boxes"></i> Products</button>
+          <button class="dash-nav-item" data-pane="a-orders"><i class="fas fa-shopping-cart"></i> Orders</button>
+          <button class="dash-nav-item" data-pane="a-users"><i class="fas fa-users"></i> Users</button>
+          <button class="dash-nav-item" data-pane="a-analytics"><i class="fas fa-chart-line"></i> Analytics</button>
+          <button class="dash-nav-item" data-pane="a-settings"><i class="fas fa-cog"></i> Settings</button>
+        </nav>
+        <div class="dash-sidebar-footer">
+          <div class="dash-user-info">
+            <div class="dash-avatar-circle admin-avatar">A</div>
+            <div>
+              <p class="dash-user-name" id="a-sidebar-name">Admin</p>
+              <p class="dash-user-role" style="color:#e8354a">Administrator</p>
+            </div>
+          </div>
+          <button class="dash-logout-btn" id="btn-admin-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+      </aside>
+      <main class="dash-main">
+        <button class="dash-close-btn" id="close-admin-dash"><i class="fas fa-times"></i></button>
+
+        <!-- Overview -->
+        <div class="dash-pane active" id="a-overview">
+          <div class="dash-pane-header">
+            <h2><i class="fas fa-tachometer-alt"></i> Dashboard Overview</h2>
+            <p id="a-greeting">Good day, Admin</p>
+          </div>
+          <div class="admin-stats-grid">
+            <div class="admin-stat-card pink-card">
+              <div class="asc-icon"><i class="fas fa-dollar-sign"></i></div>
+              <div class="asc-info"><span class="asc-num" id="stat-revenue">$0</span><span class="asc-label">Total
+                  Revenue</span></div>
+              <div class="asc-trend up"><i class="fas fa-arrow-up"></i> 12%</div>
+            </div>
+            <div class="admin-stat-card blue-card">
+              <div class="asc-icon"><i class="fas fa-shopping-cart"></i></div>
+              <div class="asc-info"><span class="asc-num" id="stat-orders">0</span><span class="asc-label">Total
+                  Orders</span></div>
+              <div class="asc-trend up"><i class="fas fa-arrow-up"></i> 8%</div>
+            </div>
+            <div class="admin-stat-card green-card">
+              <div class="asc-icon"><i class="fas fa-users"></i></div>
+              <div class="asc-info"><span class="asc-num" id="stat-customers">0</span><span
+                  class="asc-label">Customers</span></div>
+              <div class="asc-trend up"><i class="fas fa-arrow-up"></i> 5%</div>
+            </div>
+            <div class="admin-stat-card orange-card">
+              <div class="asc-icon"><i class="fas fa-clock"></i></div>
+              <div class="asc-info"><span class="asc-num" id="stat-pending">0</span><span class="asc-label">Pending
+                  Orders</span></div>
+              <div class="asc-trend down"><i class="fas fa-arrow-down"></i> 2%</div>
+            </div>
+            <div class="admin-stat-card purple-card">
+              <div class="asc-icon"><i class="fas fa-boxes"></i></div>
+              <div class="asc-info"><span class="asc-num" id="a-total-products">0</span><span
+                  class="asc-label">Products</span></div>
+            </div>
+            <div class="admin-stat-card red-card">
+              <div class="asc-icon"><i class="fas fa-exclamation-triangle"></i></div>
+              <div class="asc-info"><span class="asc-num" id="stat-lowstock">0</span><span class="asc-label">Low
+                  Stock</span></div>
+            </div>
+          </div>
+          <div class="dash-two-col" style="margin-top:20px">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h4>Recent Orders</h4><span class="dash-card-tag">Last 7 days</span>
+              </div>
+              <div id="a-recent-orders" class="a-order-list"></div>
+            </div>
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h4>Top Products</h4><span class="dash-card-tag">By revenue</span>
+              </div>
+              <div id="a-top-products" class="a-top-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Products -->
+        <div class="dash-pane hidden" id="a-products">
+          <div class="dash-pane-header">
+            <div>
+              <h2><i class="fas fa-boxes"></i> Product Management</h2>
+              <p>Add, edit and manage all products</p>
+            </div>
+            <button class="btn-add-to-cart" id="btn-add-product"><i class="fas fa-plus"></i> Add Product</button>
+          </div>
+          <div class="a-products-toolbar">
+            <input type="text" class="fp-input" id="a-product-search" placeholder="Search products..."
+              style="max-width:260px" />
+            <select class="fp-input" id="a-product-cat-filter" style="max-width:180px">
+              <option value="">All Categories</option>
+              <option>Dress &amp; Frock</option>
+              <option>T-Shirts</option>
+              <option>Jackets</option>
+              <option>Shoes &amp; Footwear</option>
+              <option>Watches &amp; Jewelry</option>
+              <option>Cosmetics &amp; Beauty</option>
+              <option>Glasses &amp; Lens</option>
+              <option>Bags &amp; Accessories</option>
+              <option>Perfume &amp; Fragrance</option>
+            </select>
+          </div>
+          <div id="admin-products-list" class="a-products-table-wrap"></div>
+        </div>
+
+        <!-- Orders -->
+        <div class="dash-pane hidden" id="a-orders">
+          <div class="dash-pane-header">
+            <h2><i class="fas fa-shopping-cart"></i> Order Management</h2>
+            <p>View and manage all customer orders</p>
+          </div>
+          <div class="a-order-status-tabs">
+            <button class="a-status-tab active">All</button>
+            <button class="a-status-tab">Pending</button>
+            <button class="a-status-tab">Processing</button>
+            <button class="a-status-tab">Shipped</button>
+            <button class="a-status-tab">Delivered</button>
+            <button class="a-status-tab">Cancelled</button>
+          </div>
+          <div id="a-orders-list" class="a-orders-table"></div>
+        </div>
+
+        <!-- Users -->
+        <div class="dash-pane hidden" id="a-users">
+          <div class="dash-pane-header">
+            <h2><i class="fas fa-users"></i> User Management</h2>
+            <p>Manage customer and seller accounts</p>
+          </div>
+          <div id="a-users-list" class="a-users-table"></div>
+        </div>
+
+        <!-- Analytics -->
+        <div class="dash-pane hidden" id="a-analytics">
+          <div class="dash-pane-header">
+            <h2><i class="fas fa-chart-line"></i> Analytics</h2>
+            <p>Store performance insights</p>
+          </div>
+          <div class="analytics-cards">
+            <div class="analytics-card">
+              <h4>Category Breakdown</h4>
+              <div id="a-cat-chart" class="a-bar-chart"></div>
+            </div>
+            <div class="analytics-card">
+              <h4>Payment Methods</h4>
+              <div id="a-pay-chart" class="a-bar-chart"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="dash-pane hidden" id="a-settings">
+          <div class="dash-pane-header">
+            <h2><i class="fas fa-cog"></i> Store Settings</h2>
+            <p>Manage your store configuration</p>
+          </div>
+          <div class="dash-settings-grid">
+            <div class="dash-setting-row"><label>Store Name</label><input class="fp-input" value="Suraj Commerce Hub" />
+            </div>
+            <div class="dash-setting-row"><label>Contact Email</label><input class="fp-input"
+                value="admin@surajcommerce.com" /></div>
+            <div class="dash-setting-row"><label>WhatsApp Number</label><input class="fp-input"
+                value="+977 9801234567" /></div>
+            <div class="dash-setting-row"><label>Free Shipping Over ($)</label><input class="fp-input" type="number"
+                value="55" /></div>
+            <div class="dash-setting-row"><label>Flash Sale Active</label><label class="toggle-switch"><input
+                  type="checkbox" checked /><span class="toggle-knob"></span></label></div>
+            <div class="dash-setting-row"><label>Maintenance Mode</label><label class="toggle-switch"><input
+                  type="checkbox" /><span class="toggle-knob"></span></label></div>
+          </div>
+          <button class="btn-add-to-cart" style="margin-top:16px"><i class="fas fa-save"></i> Save Settings</button>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ===================== SELLER DASHBOARD ===================== -->
+  <div class="dashboard-overlay" id="seller-dashboard">
+    <div class="dashboard seller-dash">
+      <aside class="dash-sidebar seller-sidebar">
+        <div class="dash-brand seller-brand"><i class="fas fa-store"></i><span>Seller Hub</span></div>
+        <nav class="dash-nav">
+          <button class="dash-nav-item active" data-pane="s-overview"><i class="fas fa-tachometer-alt"></i>
+            Overview</button>
+          <button class="dash-nav-item" data-pane="s-products"><i class="fas fa-boxes"></i> My Products</button>
+          <button class="dash-nav-item" data-pane="s-orders"><i class="fas fa-shopping-cart"></i> Orders</button>
+          <button class="dash-nav-item" data-pane="s-earnings"><i class="fas fa-wallet"></i> Earnings</button>
+          <button class="dash-nav-item" data-pane="s-profile"><i class="fas fa-user"></i> Profile</button>
+        </nav>
+        <div class="dash-sidebar-footer">
+          <div class="dash-user-info">
+            <div class="dash-avatar-circle seller-avatar">S</div>
+            <div>
+              <p class="dash-user-name" id="s-sidebar-name">Seller</p>
+              <p class="dash-user-role" style="color:#1b6ca8">Seller</p>
+            </div>
+          </div>
+          <button class="dash-logout-btn" id="btn-seller-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+      </aside>
+      <main class="dash-main">
+        <button class="dash-close-btn" id="close-seller-dash"><i class="fas fa-times"></i></button>
+
+        <!-- Overview -->
+        <div class="dash-pane active" id="s-overview">
+          <div class="dash-pane-header">
+            <h2><i class="fas fa-tachometer-alt"></i> Seller Overview</h2>
+            <p id="s-greeting">Welcome back!</p>
+          </div>
+          <div class="admin-stats-grid">
+            <div class="admin-stat-card green-card">
+              <div class="asc-icon"><i class="fas fa-dollar-sign"></i></div>
+              <div class="asc-info"><span class="asc-num" id="seller-revenue">$0</span><span class="asc-label">Total
+                  Earnings</span></div>
+            </div>
+            <div class="admin-stat-card blue-card">
+              <div class="asc-icon"><i class="fas fa-box"></i></div>
+              <div class="asc-info"><span class="asc-num" id="seller-products">0</span><span class="asc-label">My
+                  Products</span></div>
+            </div>
+            <div class="admin-stat-card orange-card">
+              <div class="asc-icon"><i class="fas fa-shopping-cart"></i></div>
+              <div class="asc-info"><span class="asc-num" id="seller-orders">0</span><span class="asc-label">Total
+                  Orders</span></div>
+            </div>
+            <div class="admin-stat-card pink-card">
+              <div class="asc-icon"><i class="fas fa-star"></i></div>
+              <div class="asc-info"><span class="asc-num" id="seller-rating">4.8</span><span class="asc-label">Avg.
+                  Rating</span></div>
+            </div>
+          </div>
+          <div class="dash-card" style="margin-top:20px">
+            <div class="dash-card-header">
+              <h4>Recent Sales</h4>
+            </div>
+            <div id="s-recent-sales" class="a-order-list"></div>
+          </div>
+        </div>
+
+        <!-- Products -->
+        <div class="dash-pane hidden" id="s-products">
+          <div class="dash-pane-header">
+            <div>
+              <h2><i class="fas fa-boxes"></i> My Products</h2>
+              <p>Manage your listings</p>
+            </div>
+            <button class="btn-add-to-cart" id="btn-seller-add-product"><i class="fas fa-plus"></i> Add Product</button>
+          </div>
+          <div id="seller-products-list" class="a-products-table-wrap"></div>
+        </div>
+
+        <!-- Orders -->
+        <div class="dash-pane hidden" id="s-orders">
+          <div class="dash-pane-header">
+            <h2><i class="fas fa-shopping-cart"></i> My Orders</h2>
+            <p>Orders for your products</p>
+          </div>
+          <div id="s-orders-list" class="a-orders-table"></div>
+        </div>
+
+        <!-- Earnings -->
+        <div class="dash-pane hidden" id="s-earnings">
+          <div class="dash-pane-header">
+            <h2><i class="fas fa-wallet"></i> Earnings</h2>
+            <p>Your revenue breakdown</p>
+          </div>
+          <div class="earnings-summary">
+            <div class="earning-row"><span>Total Earned</span><strong id="s-earn-total">$0.00</strong></div>
+            <div class="earning-row"><span>This Month</span><strong id="s-earn-month">$0.00</strong></div>
+            <div class="earning-row"><span>Pending Payout</span><strong id="s-earn-pending"
+                style="color:var(--pink)">$0.00</strong></div>
+            <div class="earning-row"><span>Platform Fee (10%)</span><strong id="s-earn-fee"
+                style="color:#999">$0.00</strong></div>
+          </div>
+          <p class="dash-empty" style="margin-top:20px">Payouts are processed every Monday via eSewa / Bank Transfer.
+          </p>
+        </div>
+
+        <!-- Profile -->
+        <div class="dash-pane hidden" id="s-profile">
+          <div class="dash-pane-header">
+            <h2><i class="fas fa-user"></i> Seller Profile</h2>
+            <p>Your public store information</p>
+          </div>
+          <form class="dash-form" id="seller-profile-form">
+            <div class="form-grid-2">
+              <div class="fg col-2"><label>Store / Display Name</label><input type="text" name="name" id="profile-name"
+                  class="fp-input" /></div>
+              <div class="fg col-2"><label>Email <span style="color:#999">(read-only)</span></label><input type="email"
+                  id="profile-email" class="fp-input" readonly /></div>
+              <div class="fg"><label>Phone</label><input type="tel" name="phone" id="profile-phone" class="fp-input" />
+              </div>
+              <div class="fg"><label>Location</label><input type="text" name="location" class="fp-input"
+                  placeholder="Kathmandu, Nepal" /></div>
+              <div class="fg"><label>Current Password</label><input type="password" name="currentPassword"
+                  id="profile-current-pass" class="fp-input" placeholder="••••••••" /></div>
+              <div class="fg"><label>New Password</label><input type="password" name="newPassword" id="profile-new-pass"
+                  class="fp-input" placeholder="Min 6 chars" /></div>
+            </div>
+            <button type="submit" class="btn-add-to-cart" style="margin-top:14px"><i class="fas fa-save"></i> Save
+              Profile</button>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- hidden shim so old JS references don't break -->
+  <div id="account-modal" style="display:none">
+    <span id="profile-role-badge-old"></span>
+  </div>
+
+  <!-- ===================== ADD/EDIT PRODUCT MODAL ===================== -->
+  <div class="modal modal-lg" id="product-form-modal">
+    <div class="modal-box">
+      <button class="modal-close" id="close-product-form"><i class="fas fa-times"></i></button>
+      <h3 id="product-form-title" style="margin-bottom:20px;font-weight:800">Add New Product</h3>
+      <form id="product-form">
+        <input type="hidden" id="product-form-id" />
+        <div class="form-grid-2">
+          <div class="fg col-2"><label>Title *</label><input type="text" id="pf-title" class="fp-input" required
+              placeholder="Product name" /></div>
+          <div class="fg col-2"><label>Description *</label><textarea id="pf-desc"
+              style="width:100%;padding:10px;border:1.5px solid #eee;border-radius:4px;resize:vertical;font-family:inherit"
+              required rows="3" placeholder="Describe the product..."></textarea></div>
+          <div class="fg"><label>Category *</label><select id="pf-category" class="fp-input" required>
+              <option value="">Select</option>
+              <option>Dress &amp; Frock</option>
+              <option>Winter Wear</option>
+              <option>Glasses &amp; Lens</option>
+              <option>Shorts &amp; Jeans</option>
+              <option>T-Shirts</option>
+              <option>Jackets</option>
+              <option>Watches &amp; Jewelry</option>
+              <option>Hats &amp; Caps</option>
+              <option>Bags &amp; Accessories</option>
+              <option>Shoes &amp; Footwear</option>
+              <option>Cosmetics</option>
+              <option>Perfume &amp; Fragrance</option>
+              <option>Sports</option>
+            </select></div>
+          <div class="fg"><label>Price ($) *</label><input type="number" id="pf-price" class="fp-input" required min="0"
+              step="0.01" /></div>
+          <div class="fg"><label>Original Price ($)</label><input type="number" id="pf-original-price" class="fp-input"
+              min="0" step="0.01" /></div>
+          <div class="fg"><label>Stock *</label><input type="number" id="pf-stock" class="fp-input" required min="0" />
+          </div>
+          <div class="fg col-2"><label>Image URL</label><input type="text" id="pf-image-url" class="fp-input"
+              placeholder="https://..." /></div>
+          <div class="fg"><label>Tags (comma separated)</label><input type="text" id="pf-tags" class="fp-input"
+              placeholder="casual, summer" /></div>
+          <div class="fg"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox"
+                id="pf-featured" /> Featured Product</label></div>
+        </div>
+        <button type="submit" class="btn-add-to-cart" style="width:100%;margin-top:16px" id="product-form-submit">ADD
+          PRODUCT</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="assets/js/script.js"></script>
+</body>
+
+</html>
