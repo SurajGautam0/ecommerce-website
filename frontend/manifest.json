@@ -2,7 +2,7 @@
   "name": "Suraj Commerce Hub",
   "short_name": "Suraj Shop",
   "description": "Fashion ecommerce store — Nepal & worldwide",
-  "start_url": "/frontend/index.html",
+  "start_url": "/ecommerce-website/frontend/index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#e8354a",
