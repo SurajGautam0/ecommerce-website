@@ -1,0 +1,11 @@
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/frontend/$1" }
+  ],
+  "headers": [
+    {
+      "source": "/frontend/sw.js",
+      "headers": [{ "key": "Service-Worker-Allowed", "value": "/" }]
+    }
+  ]
+}
